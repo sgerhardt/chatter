@@ -34,5 +34,5 @@ test: install-mockery mocks
 .PHONY: build
 build:
 	@echo "Building binary..."
-	go build -o chatter
+	go build -o bin/chatter ./cmd/chatter
 	@echo "Binary built successfully."

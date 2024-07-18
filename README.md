@@ -11,9 +11,9 @@ make chatter
 
 4. Run with text and voice values
 ```
-chatter -t "Hello, World!" -v "your_voice_id" 
+./bin/chatter -t "Hello, World!" -v "your_voice_id" 
 ```
 or point it to a website
 ```
-chatter -s "https://www.example.com" -v "your_voice_id"
+./bin/chatter -s "https://www.example.com" -v "your_voice_id"
 ```
