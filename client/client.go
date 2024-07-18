@@ -14,14 +14,14 @@ import (
 
 type ElvenRequest struct {
 	Text                            string                            `json:"text"`
-	ModelId                         string                            `json:"model_id"`
+	ModelID                         string                            `json:"model_id"`
 	VoiceSettings                   VoiceSettings                     `json:"voice_settings"`
 	PronunciationDictionaryLocators []PronunciationDictionaryLocators `json:"pronunciation_dictionary_locators,omitempty"`
 	Seed                            int                               `json:"seed,omitempty"`
 	PreviousText                    string                            `json:"previous_text,omitempty"`
 	NextText                        string                            `json:"next_text,omitempty"`
-	PreviousRequestIds              []string                          `json:"previous_request_ids,omitempty"`
-	NextRequestIds                  []string                          `json:"next_request_ids,omitempty"`
+	PreviousRequestIDs              []string                          `json:"previous_request_ids,omitempty"`
+	NextRequestIDs                  []string                          `json:"next_request_ids,omitempty"`
 }
 
 type VoiceSettings struct {
@@ -32,18 +32,18 @@ type VoiceSettings struct {
 }
 
 type PronunciationDictionaryLocators struct {
-	PronunciationDictionaryId string `json:"pronunciation_dictionary_id,omitempty"`
-	VersionId                 string `json:"version_id,omitempty"`
+	PronunciationDictionaryID string `json:"pronunciation_dictionary_id,omitempty"`
+	VersionID                 string `json:"version_id,omitempty"`
 }
 
-type Client struct{}
+type Client struct {
+	APIKey string
+	Output string
+}
 
-var key string
-var output string
-
-func init() {
-	key, output = readEnvFile()
-	if key == "" {
+func New() *Client {
+	apiKey, output := readEnvFile()
+	if apiKey == "" {
 		log.Fatal("API Key not found")
 	}
 	if output == "" {
@@ -51,21 +51,31 @@ func init() {
 		formattedTime := currentTime.Format("20060102_150405")
 		output = "output_" + fmt.Sprintf("%s", formattedTime) + ".mp3"
 	}
-}
-
-func New() *Client {
-	return &Client{}
+	return &Client{
+		APIKey: apiKey,
+		Output: output,
+	}
 }
 
 func (c *Client) GenerateVoiceFromText(text string, voiceID string) {
 	payload, err := buildPayload(text)
 	if err != nil {
-		panic(err)
+		log.Fatalf("Failed to build payload: %v", err)
 	}
 
-	req := buildRequest(err, voiceID, payload)
-	body := doRequest(err, req)
-	writeFile(err, body)
+	req, err := buildRequest(c.APIKey, voiceID, payload)
+	if err != nil {
+		log.Fatalf("Failed to build request: %v", err)
+	}
+
+	body, err := doRequest(req)
+	if err != nil {
+		log.Fatalf("Request failed: %v", err)
+	}
+
+	if err = writeFile(c.Output, body); err != nil {
+		log.Fatalf("Failed to write file: %v", err)
+	}
 }
 
 func readEnvFile() (string, string) {
@@ -79,61 +89,46 @@ func readEnvFile() (string, string) {
 func buildPayload(text string) ([]byte, error) {
 	elvenReq := ElvenRequest{
 		Text:    text,
-		ModelId: "eleven_monolingual_v1",
+		ModelID: "eleven_monolingual_v1",
 		VoiceSettings: VoiceSettings{
 			Stability:       0,
 			SimilarityBoost: 0,
-			Style:           0,
-			UseSpeakerBoost: false,
 		},
-		PronunciationDictionaryLocators: nil,
-		Seed:                            0,
-		PreviousText:                    "",
-		NextText:                        "",
-		PreviousRequestIds:              nil,
-		NextRequestIds:                  nil,
 	}
-
-	payload, err := json.Marshal(elvenReq)
-	if err != nil {
-		panic(err)
-	}
-	return payload, err
+	return json.Marshal(elvenReq)
 }
 
-func writeFile(err error, body []byte) {
-	err = os.WriteFile(output, body, 0644)
-	fmt.Println("File written to", output)
+func writeFile(filename string, data []byte) error {
+	return os.WriteFile(filename, data, 0644)
 }
 
-func doRequest(err error, req *http.Request) []byte {
+func doRequest(req *http.Request) ([]byte, error) {
 	res, err := http.DefaultClient.Do(req)
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
-
 	defer func(Body io.ReadCloser) {
-		cErr := Body.Close()
-		if cErr != nil {
-			panic(cErr)
+		closeErr := Body.Close()
+		if closeErr != nil {
+			log.Printf("error closing request body: %v", err)
 		}
 	}(res.Body)
 
 	body, err := io.ReadAll(res.Body)
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
-	return body
+	return body, nil
 }
 
-func buildRequest(err error, voiceID string, payload []byte) *http.Request {
+func buildRequest(apiKey, voiceID string, payload []byte) (*http.Request, error) {
 	url := fmt.Sprintf("https://api.elevenlabs.io/v1/text-to-speech/%s", voiceID)
 	req, err := http.NewRequest("POST", url, bytes.NewReader(payload))
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 	req.Header.Add("Accept", "audio/mpeg")
 	req.Header.Add("Content-Type", "application/json")
-	req.Header.Add("xi-api-key", key)
-	return req
+	req.Header.Add("xi-api-key", apiKey)
+	return req, nil
 }
