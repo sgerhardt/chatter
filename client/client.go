@@ -10,8 +10,12 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"strings"
 	"time"
+	"unicode/utf8"
 )
+
+const RequestCharacterLimit = 10000
 
 type ElvenRequest struct {
 	Text                            string                            `json:"text"`
@@ -47,13 +51,24 @@ type HttpClient interface {
 	Do(req *http.Request) (*http.Response, error)
 }
 
-func (c *Client) Write(data []byte) (int, error) {
-	if c.outputFilePath != "" {
-		err := os.WriteFile(c.outputFilePath, data, 0644)
-		if err != nil {
-			return 0, err
-		}
+func (c *Client) fileWithTimestamp() string {
+	currentTime := time.Now()
+	formattedTime := currentTime.Format("20060102_150405")
+	prefix := ""
+	if c.outputFilePath == "" {
+		prefix = "output_"
+	} else if !strings.HasSuffix(c.outputFilePath, string(os.PathSeparator)) {
+		prefix = c.outputFilePath + string(os.PathSeparator)
 	}
+	return prefix + fmt.Sprintf("%s", formattedTime) + ".mp3"
+}
+
+func (c *Client) Write(data []byte) (int, error) {
+	err := os.WriteFile(c.fileWithTimestamp(), data, 0644)
+	if err != nil {
+		return 0, err
+	}
+
 	return len(data), nil
 }
 
@@ -62,26 +77,24 @@ func New() *Client {
 	if apiKey == "" {
 		log.Fatal("API Key not found")
 	}
-	if output == "" {
-		currentTime := time.Now()
-		formattedTime := currentTime.Format("20060102_150405")
-		output = "output_" + fmt.Sprintf("%s", formattedTime) + ".mp3"
-	}
 	return &Client{
 		apiKey:         apiKey,
 		outputFilePath: output,
 		httpClient: &http.Client{
-			Timeout: time.Second * 300,
+			Timeout: time.Second * 310,
 			Transport: &http.Transport{
 				DialContext:           (&net.Dialer{Timeout: time.Second * 3}).DialContext,
 				TLSHandshakeTimeout:   time.Second * 3,
-				ResponseHeaderTimeout: time.Second * 3,
+				ResponseHeaderTimeout: time.Second * 300, // eleven labs doesn't appear to respond with the header until the request completes
 			},
 		},
 	}
 }
 
-func (c *Client) GenerateVoiceForText(text string, voiceID string) ([]byte, error) {
+func (c *Client) FromText(text string, voiceID string) ([]byte, error) {
+	if count := utf8.RuneCountInString(text); count > RequestCharacterLimit {
+		return nil, fmt.Errorf("text limit is %d characters, got :%d", RequestCharacterLimit, count)
+	}
 	if voiceID == "" {
 		return nil, fmt.Errorf("voice ID is required")
 	}
@@ -137,6 +150,9 @@ func (c *Client) doRequest(req *http.Request) ([]byte, error) {
 	body, err := io.ReadAll(res.Body)
 	if err != nil {
 		return nil, err
+	}
+	if res.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("request failed: %s, body:%v", res.Status, string(body))
 	}
 	return body, nil
 }

@@ -30,3 +30,9 @@ test: install-mockery mocks
 	@echo "Running tests..."
 	go test ./...
 	@echo "Tests completed."
+
+.PHONY: build
+build:
+	@echo "Building binary..."
+	go build -o chatter
+	@echo "Binary built successfully."

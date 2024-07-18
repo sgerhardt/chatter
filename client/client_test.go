@@ -75,7 +75,7 @@ func TestClient_GenerateVoiceFromText(t *testing.T) {
 				outputFilePath: tt.fields.outputFilePath,
 				httpClient:     mockClient,
 			}
-			_, err := c.GenerateVoiceForText(tt.args.text, tt.args.voiceID)
+			_, err := c.FromText(tt.args.text, tt.args.voiceID)
 			if tt.error != nil {
 				assert.EqualError(t, err, tt.error.Error())
 				return
