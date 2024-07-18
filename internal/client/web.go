@@ -11,7 +11,7 @@ import (
 )
 
 // FromWebsite reads and parses text from a website
-func (c *Client) FromWebsite(url string) ([]string, error) {
+func (c *ElevenLabs) FromWebsite(url string) ([]string, error) {
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create request: %w", err)
@@ -36,7 +36,7 @@ func (c *Client) FromWebsite(url string) ([]string, error) {
 		return nil, err
 	}
 
-	return batchText(text, 10000), nil
+	return batchText(text, c.Config.CharacterRequestLimit), nil
 }
 
 // extractTextFromHTML extracts text from HTML document

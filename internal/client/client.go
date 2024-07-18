@@ -2,12 +2,11 @@ package client
 
 import (
 	"bytes"
+	"chatter/internal/config"
 	"encoding/json"
 	"fmt"
-	"github.com/joho/godotenv"
 	"io"
 	"log"
-	"net"
 	"net/http"
 	"os"
 	"strings"
@@ -15,9 +14,7 @@ import (
 	"unicode/utf8"
 )
 
-const RequestCharacterLimit = 10000
-
-type ElvenRequest struct {
+type ElevenRequest struct {
 	Text                            string                            `json:"text"`
 	ModelID                         string                            `json:"model_id"`
 	VoiceSettings                   VoiceSettings                     `json:"voice_settings"`
@@ -41,29 +38,28 @@ type PronunciationDictionaryLocators struct {
 	VersionID                 string `json:"version_id,omitempty"`
 }
 
-type Client struct {
-	httpClient     HttpClient
-	apiKey         string
-	outputFilePath string
+type ElevenLabs struct {
+	httpClient Http
+	Config     config.AppConfig
 }
 
-type HttpClient interface {
+type Http interface {
 	Do(req *http.Request) (*http.Response, error)
 }
 
-func (c *Client) fileWithTimestamp() string {
+func (c *ElevenLabs) fileWithTimestamp() string {
 	currentTime := time.Now()
 	formattedTime := currentTime.Format("20060102_150405")
 	prefix := ""
-	if c.outputFilePath == "" {
+	if c.Config.OutputDir == "" {
 		prefix = "output_"
-	} else if !strings.HasSuffix(c.outputFilePath, string(os.PathSeparator)) {
-		prefix = c.outputFilePath + string(os.PathSeparator)
+	} else if !strings.HasSuffix(c.Config.OutputDir, string(os.PathSeparator)) {
+		prefix = c.Config.OutputDir + string(os.PathSeparator)
 	}
 	return prefix + fmt.Sprintf("%s", formattedTime) + ".mp3"
 }
 
-func (c *Client) Write(data []byte) (int, error) {
+func (c *ElevenLabs) Write(data []byte) (int, error) {
 	err := os.WriteFile(c.fileWithTimestamp(), data, 0644)
 	if err != nil {
 		return 0, err
@@ -72,28 +68,55 @@ func (c *Client) Write(data []byte) (int, error) {
 	return len(data), nil
 }
 
-func New() *Client {
-	apiKey, output := readEnvFile()
-	if apiKey == "" {
-		log.Fatal("API Key not found")
-	}
-	return &Client{
-		apiKey:         apiKey,
-		outputFilePath: output,
-		httpClient: &http.Client{
-			Timeout: time.Second * 310,
-			Transport: &http.Transport{
-				DialContext:           (&net.Dialer{Timeout: time.Second * 3}).DialContext,
-				TLSHandshakeTimeout:   time.Second * 3,
-				ResponseHeaderTimeout: time.Second * 300, // eleven labs doesn't appear to respond with the header until the request completes
-			},
-		},
+func New(cfg config.AppConfig, httpClient Http) *ElevenLabs {
+	return &ElevenLabs{
+		Config:     cfg,
+		httpClient: httpClient,
 	}
 }
 
-func (c *Client) FromText(text string, voiceID string) ([]byte, error) {
-	if count := utf8.RuneCountInString(text); count > RequestCharacterLimit {
-		return nil, fmt.Errorf("text limit is %d characters, got :%d", RequestCharacterLimit, count)
+func (c *ElevenLabs) Run() {
+	if c.Config.TextInput != "" {
+		c.fromText()
+	}
+
+	if c.Config.WebsiteURL != "" {
+		c.fromSite()
+	}
+}
+
+func (c *ElevenLabs) fromText() {
+	fromText, err := c.FromText(c.Config.TextInput, c.Config.VoiceID)
+	if err != nil {
+		log.Fatal(err)
+	}
+	_, err = c.Write(fromText)
+	if err != nil {
+		log.Fatal(err)
+	}
+}
+
+func (c *ElevenLabs) fromSite() {
+	texts, err := c.FromWebsite(c.Config.WebsiteURL)
+	if err != nil {
+		log.Fatal(err)
+	}
+	for _, text := range texts {
+		fromText, tErr := c.FromText(text, c.Config.VoiceID)
+		if tErr != nil {
+			log.Fatal(tErr)
+		}
+		_, err = c.Write(fromText)
+		if err != nil {
+			log.Fatal(err)
+		}
+	}
+
+}
+
+func (c *ElevenLabs) FromText(text string, voiceID string) ([]byte, error) {
+	if count := utf8.RuneCountInString(text); count > c.Config.CharacterRequestLimit {
+		return nil, fmt.Errorf("text limit is %d characters, got :%d", c.Config.CharacterRequestLimit, count)
 	}
 	if voiceID == "" {
 		return nil, fmt.Errorf("voice ID is required")
@@ -104,7 +127,7 @@ func (c *Client) FromText(text string, voiceID string) ([]byte, error) {
 		return nil, fmt.Errorf("failed to build payload: %w", err)
 	}
 
-	req, err := buildRequest(c.apiKey, voiceID, payload)
+	req, err := buildRequest(c.Config.APIKey, voiceID, payload)
 	if err != nil {
 		return nil, fmt.Errorf("failed to build request: %w", err)
 	}
@@ -116,16 +139,8 @@ func (c *Client) FromText(text string, voiceID string) ([]byte, error) {
 	return body, nil
 }
 
-func readEnvFile() (string, string) {
-	err := godotenv.Load()
-	if err != nil {
-		log.Fatalf("Error loading .env file: %v", err)
-	}
-	return os.Getenv("XI_API_KEY"), os.Getenv("OUTPUT")
-}
-
 func buildPayload(text string) ([]byte, error) {
-	elvenReq := ElvenRequest{
+	elvenReq := ElevenRequest{
 		Text:    text,
 		ModelID: "eleven_monolingual_v1",
 		VoiceSettings: VoiceSettings{
@@ -136,7 +151,7 @@ func buildPayload(text string) ([]byte, error) {
 	return json.Marshal(elvenReq)
 }
 
-func (c *Client) doRequest(req *http.Request) ([]byte, error) {
+func (c *ElevenLabs) doRequest(req *http.Request) ([]byte, error) {
 	res, err := c.httpClient.Do(req)
 	if err != nil {
 		return nil, err

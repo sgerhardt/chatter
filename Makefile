@@ -1,4 +1,4 @@
-MOCKERY_CMD = mockery --name=HttpClient --dir=./client --output=./client/mocks --outpkg=mocks
+MOCKERY_CMD = mockery --name=Http --dir=./internal/client --output=./internal/client/mocks --outpkg=mocks
 
 # Define the target to generate mocks
 .PHONY: mocks
@@ -10,12 +10,12 @@ mocks:
 .PHONY: clean
 clean:
 	@echo "Cleaning generated mocks..."
-	rm -rf ./client/mocks
+	rm -rf ./internal/client/mocks
 	@echo "Generated mocks cleaned."
 
 .PHONY: clean-output
-clean:
-	@echo "Cleaning generated mocks..."
+clean-output:
+	@echo "Cleaning output files..."
 	rm -rf ./*.mp3
 	@echo "Generated mocks cleaned."
 
