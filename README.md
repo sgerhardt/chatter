@@ -1,4 +1,4 @@
-1. Have an elven labs account
+1. Have an eleven labs account
 2. Setup a .env file with the following content
 ```
 XI_API_KEY=<replace_me>
