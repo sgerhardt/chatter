@@ -3,6 +3,7 @@ package main
 import (
 	"chatter/client"
 	"flag"
+	"log"
 )
 
 func main() {
@@ -18,5 +19,12 @@ func run() {
 	}
 
 	c := client.New()
-	c.GenerateVoiceFromText(*textInput, *voiceID)
+	bytes, err := c.GenerateVoiceFromText(*textInput, *voiceID)
+	if err != nil {
+		log.Fatal(err)
+	}
+	_, err = c.Write(bytes)
+	if err != nil {
+		log.Fatal(err)
+	}
 }

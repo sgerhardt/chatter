@@ -37,8 +37,18 @@ type PronunciationDictionaryLocators struct {
 }
 
 type Client struct {
-	APIKey string
-	Output string
+	apiKey         string
+	outputFilePath string
+}
+
+func (c *Client) Write(data []byte) (int, error) {
+	if c.outputFilePath != "" {
+		err := os.WriteFile(c.outputFilePath, data, 0644)
+		if err != nil {
+			return 0, err
+		}
+	}
+	return len(data), nil
 }
 
 func New() *Client {
@@ -52,30 +62,27 @@ func New() *Client {
 		output = "output_" + fmt.Sprintf("%s", formattedTime) + ".mp3"
 	}
 	return &Client{
-		APIKey: apiKey,
-		Output: output,
+		apiKey:         apiKey,
+		outputFilePath: output,
 	}
 }
 
-func (c *Client) GenerateVoiceFromText(text string, voiceID string) {
+func (c *Client) GenerateVoiceFromText(text string, voiceID string) ([]byte, error) {
 	payload, err := buildPayload(text)
 	if err != nil {
-		log.Fatalf("Failed to build payload: %v", err)
+		return nil, fmt.Errorf("failed to build payload: %w", err)
 	}
 
-	req, err := buildRequest(c.APIKey, voiceID, payload)
+	req, err := buildRequest(c.apiKey, voiceID, payload)
 	if err != nil {
-		log.Fatalf("Failed to build request: %v", err)
+		return nil, fmt.Errorf("failed to build request: %w", err)
 	}
 
 	body, err := doRequest(req)
 	if err != nil {
-		log.Fatalf("Request failed: %v", err)
+		return nil, err
 	}
-
-	if err = writeFile(c.Output, body); err != nil {
-		log.Fatalf("Failed to write file: %v", err)
-	}
+	return body, nil
 }
 
 func readEnvFile() (string, string) {
@@ -98,21 +105,16 @@ func buildPayload(text string) ([]byte, error) {
 	return json.Marshal(elvenReq)
 }
 
-func writeFile(filename string, data []byte) error {
-	return os.WriteFile(filename, data, 0644)
-}
-
 func doRequest(req *http.Request) ([]byte, error) {
 	res, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return nil, err
 	}
-	defer func(Body io.ReadCloser) {
-		closeErr := Body.Close()
-		if closeErr != nil {
-			log.Printf("error closing request body: %v", err)
+	defer func() {
+		if closeErr := res.Body.Close(); closeErr != nil {
+			log.Printf("error closing response body: %v", closeErr)
 		}
-	}(res.Body)
+	}()
 
 	body, err := io.ReadAll(res.Body)
 	if err != nil {
