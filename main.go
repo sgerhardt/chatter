@@ -19,7 +19,7 @@ func run() {
 	}
 
 	c := client.New()
-	bytes, err := c.GenerateVoiceFromText(*textInput, *voiceID)
+	bytes, err := c.GenerateVoiceForText(*textInput, *voiceID)
 	if err != nil {
 		log.Fatal(err)
 	}

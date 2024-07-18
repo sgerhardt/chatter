@@ -7,6 +7,7 @@ import (
 	"github.com/joho/godotenv"
 	"io"
 	"log"
+	"net"
 	"net/http"
 	"os"
 	"time"
@@ -37,8 +38,13 @@ type PronunciationDictionaryLocators struct {
 }
 
 type Client struct {
+	httpClient     HttpClient
 	apiKey         string
 	outputFilePath string
+}
+
+type HttpClient interface {
+	Do(req *http.Request) (*http.Response, error)
 }
 
 func (c *Client) Write(data []byte) (int, error) {
@@ -64,10 +70,22 @@ func New() *Client {
 	return &Client{
 		apiKey:         apiKey,
 		outputFilePath: output,
+		httpClient: &http.Client{
+			Timeout: time.Second * 300,
+			Transport: &http.Transport{
+				DialContext:           (&net.Dialer{Timeout: time.Second * 3}).DialContext,
+				TLSHandshakeTimeout:   time.Second * 3,
+				ResponseHeaderTimeout: time.Second * 3,
+			},
+		},
 	}
 }
 
-func (c *Client) GenerateVoiceFromText(text string, voiceID string) ([]byte, error) {
+func (c *Client) GenerateVoiceForText(text string, voiceID string) ([]byte, error) {
+	if voiceID == "" {
+		return nil, fmt.Errorf("voice ID is required")
+	}
+
 	payload, err := buildPayload(text)
 	if err != nil {
 		return nil, fmt.Errorf("failed to build payload: %w", err)
@@ -78,7 +96,7 @@ func (c *Client) GenerateVoiceFromText(text string, voiceID string) ([]byte, err
 		return nil, fmt.Errorf("failed to build request: %w", err)
 	}
 
-	body, err := doRequest(req)
+	body, err := c.doRequest(req)
 	if err != nil {
 		return nil, err
 	}
@@ -105,8 +123,8 @@ func buildPayload(text string) ([]byte, error) {
 	return json.Marshal(elvenReq)
 }
 
-func doRequest(req *http.Request) ([]byte, error) {
-	res, err := http.DefaultClient.Do(req)
+func (c *Client) doRequest(req *http.Request) ([]byte, error) {
+	res, err := c.httpClient.Do(req)
 	if err != nil {
 		return nil, err
 	}
