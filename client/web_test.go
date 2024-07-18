@@ -23,13 +23,13 @@ func TestWebReader(t *testing.T) {
 		fields    fields
 		args      args
 		name      string
-		want      string
+		want      []string
 		error     error
 		mockSetup func(client *mocks.HttpClient)
 	}{
 		{
 			name: "Given a website, read the header and body",
-			want: "\nThis is the h1\nThis is paragraph text",
+			want: []string{"This is the h1\nThis is paragraph text\n"},
 			mockSetup: func(client *mocks.HttpClient) {
 				client.On("Do", mock.Anything).Return(&http.Response{
 					StatusCode: http.StatusOK,
@@ -47,12 +47,12 @@ func TestWebReader(t *testing.T) {
 				outputFilePath: tt.fields.outputFilePath,
 				httpClient:     mockClient,
 			}
-			text, err := c.FromWebsite("https://test.com")
+			texts, err := c.FromWebsite("https://test.com")
 			if tt.error != nil {
 				assert.EqualError(t, err, tt.error.Error())
 				return
 			}
-			assert.Equal(t, tt.want, text)
+			assert.Equal(t, tt.want, texts)
 		})
 	}
 }
