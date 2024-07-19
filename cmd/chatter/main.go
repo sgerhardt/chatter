@@ -30,7 +30,7 @@ func run() {
 	client.New(app, httpClient).Run()
 }
 
-func setup() (config.AppConfig, client.Http) {
+func setup() (config.AppConfig, client.HTTP) {
 	var app config.AppConfig
 	key, dir := readEnvFile()
 	if key == "" {

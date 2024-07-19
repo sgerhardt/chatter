@@ -14,6 +14,8 @@ import (
 )
 
 func TestClient_GenerateVoiceFromText(t *testing.T) {
+	t.Parallel()
+
 	type fields struct {
 		apiKey         string
 		outputFilePath string
@@ -37,7 +39,7 @@ func TestClient_GenerateVoiceFromText(t *testing.T) {
 				voiceID: "",
 			},
 			error:     errors.New("voice ID is required"),
-			mockSetup: func(client *mocks.Http) {},
+			mockSetup: func(_ *mocks.Http) {},
 		},
 		{
 			name:   "marshals a payload to json",
@@ -69,6 +71,7 @@ func TestClient_GenerateVoiceFromText(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			mockClient := mocks.NewHttp(t)
 			tt.mockSetup(mockClient)
 			cfg := config.AppConfig{

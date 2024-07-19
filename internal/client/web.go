@@ -49,7 +49,7 @@ func extractTextFromHTML(r io.Reader) (string, error) {
 	var sb strings.Builder
 	// Select relevant tags and extract text
 	count := 0
-	doc.Find("title, h1, h2, h3, h4, h5, h6, p").Each(func(i int, s *goquery.Selection) {
+	doc.Find("title, h1, h2, h3, h4, h5, h6, p").Each(func(_ int, s *goquery.Selection) {
 		count += utf8.RuneCountInString(s.Text())
 		sb.WriteString(s.Text())
 		sb.WriteString("\n")

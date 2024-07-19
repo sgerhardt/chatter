@@ -12,6 +12,7 @@ import (
 )
 
 func TestWebReader(t *testing.T) {
+	t.Parallel()
 
 	tests := []struct {
 		name string
@@ -46,6 +47,7 @@ func TestWebReader(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			mockClient := mocks.NewHttp(t)
 			tt.mockSetup(mockClient)
 			appConfig := config.AppConfig{

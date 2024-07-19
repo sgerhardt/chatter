@@ -39,11 +39,11 @@ type PronunciationDictionaryLocators struct {
 }
 
 type ElevenLabs struct {
-	httpClient Http
+	httpClient HTTP
 	Config     config.AppConfig
 }
 
-type Http interface {
+type HTTP interface {
 	Do(req *http.Request) (*http.Response, error)
 }
 
@@ -68,7 +68,7 @@ func (c *ElevenLabs) Write(data []byte) (int, error) {
 	return len(data), nil
 }
 
-func New(cfg config.AppConfig, httpClient Http) *ElevenLabs {
+func New(cfg config.AppConfig, httpClient HTTP) *ElevenLabs {
 	return &ElevenLabs{
 		Config:     cfg,
 		httpClient: httpClient,
