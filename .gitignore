@@ -1,4 +1,5 @@
 .env
 .idea/
-./chatter
+chatter
 ./bin
+.DS_Store
