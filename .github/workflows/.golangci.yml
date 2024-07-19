@@ -1,0 +1,18 @@
+linters:
+  enable:
+    - govet
+    - golint
+    - errcheck
+    - staticcheck
+    - unused
+    - structcheck
+    - varcheck
+    - paralleltest
+
+issues:
+  exclude-rules:
+    - path: _test\.go
+      linters:
+        - golint
+        - staticcheck
+

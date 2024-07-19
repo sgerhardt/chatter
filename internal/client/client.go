@@ -56,7 +56,7 @@ func (c *ElevenLabs) fileWithTimestamp() string {
 	} else if !strings.HasSuffix(c.Config.OutputDir, string(os.PathSeparator)) {
 		prefix = c.Config.OutputDir + string(os.PathSeparator)
 	}
-	return prefix + fmt.Sprintf("%s", formattedTime) + ".mp3"
+	return prefix + formattedTime + ".mp3"
 }
 
 func (c *ElevenLabs) Write(data []byte) (int, error) {

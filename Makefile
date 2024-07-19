@@ -1,6 +1,6 @@
 MOCKERY_CMD = mockery --name=Http --dir=./internal/client --output=./internal/client/mocks --outpkg=mocks
+GOLANGCI_LINT :=  $(GOPATH)/bin/golangci-lint
 
-# Define the target to generate mocks
 .PHONY: mocks
 mocks:
 	@echo "Generating mocks..."
@@ -30,6 +30,10 @@ test: install-mockery mocks
 	@echo "Running tests..."
 	go test ./...
 	@echo "Tests completed."
+
+.PHONY: lint
+lint: $(GOLANGCI_LINT)
+	$(GOLANGCI_LINT) run
 
 .PHONY: build
 build:
