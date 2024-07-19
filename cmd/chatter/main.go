@@ -1,10 +1,10 @@
 package main
 
 import (
-	"chatter/internal/client"
-	"chatter/internal/config"
 	"flag"
 	"github.com/joho/godotenv"
+	"github.com/sgerhardt/chatter/internal/client"
+	"github.com/sgerhardt/chatter/internal/config"
 	"log"
 	"net"
 	"net/http"

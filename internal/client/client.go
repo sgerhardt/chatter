@@ -2,9 +2,9 @@ package client
 
 import (
 	"bytes"
-	"chatter/internal/config"
 	"encoding/json"
 	"fmt"
+	"github.com/sgerhardt/chatter/internal/config"
 	"io"
 	"log"
 	"net/http"

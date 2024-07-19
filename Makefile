@@ -1,4 +1,4 @@
-MOCKERY_CMD = mockery --name=Http --dir=./internal/client --output=./internal/client/mocks --outpkg=mocks
+MOCKERY_CMD = mockery --name=HTTP --dir=./internal/client --output=./internal/client/mocks --outpkg=mocks
 GOLANGCI_LINT :=  $(GOPATH)/bin/golangci-lint
 
 .PHONY: mocks

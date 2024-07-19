@@ -1,4 +1,4 @@
-module chatter
+module github.com/sgerhardt/chatter
 
 go 1.22
 

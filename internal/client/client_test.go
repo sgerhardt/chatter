@@ -2,8 +2,9 @@ package client
 
 import (
 	"bytes"
-	"chatter/internal/client/mocks"
-	"chatter/internal/config"
+	"github.com/sgerhardt/chatter/internal/client/mocks"
+	"github.com/sgerhardt/chatter/internal/config"
+
 	"errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -30,7 +31,7 @@ func TestClient_GenerateVoiceFromText(t *testing.T) {
 		fields    fields
 		args      args
 		error     error
-		mockSetup func(client *mocks.Http)
+		mockSetup func(client *mocks.HTTP)
 	}{
 		{
 			name: "errors if voice id is not populated",
@@ -39,7 +40,7 @@ func TestClient_GenerateVoiceFromText(t *testing.T) {
 				voiceID: "",
 			},
 			error:     errors.New("voice ID is required"),
-			mockSetup: func(_ *mocks.Http) {},
+			mockSetup: func(_ *mocks.HTTP) {},
 		},
 		{
 			name:   "marshals a payload to json",
@@ -49,7 +50,7 @@ func TestClient_GenerateVoiceFromText(t *testing.T) {
 				voiceID: "stephen_hawking",
 			},
 
-			mockSetup: func(client *mocks.Http) {
+			mockSetup: func(client *mocks.HTTP) {
 				mockResp := &http.Response{
 					StatusCode: http.StatusOK,
 					Body:       io.NopCloser(bytes.NewReader([]byte("bytes representing the mp3 file..."))),
@@ -72,7 +73,7 @@ func TestClient_GenerateVoiceFromText(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			mockClient := mocks.NewHttp(t)
+			mockClient := mocks.NewHTTP(t)
 			tt.mockSetup(mockClient)
 			cfg := config.AppConfig{
 				CharacterRequestLimit: 100,
