@@ -1,3 +1,8 @@
+Eleven Labs Client
+==================
+[![Go Report Card](https://goreportcard.com/badge/github.com/sgerhardt/chatter)](https://goreportcard.com/report/github.com/sgerhardt/chatter)
+
+
 1. Have an eleven labs account
 2. Setup a .env file with the following content
 ```
@@ -9,7 +14,7 @@ OUTPUT=/user/downloads/example # leave blank to use same directory as executable
 make chatter
 ```
 
-4. Run with text and voice values
+4. Run with text
 ```
 ./bin/chatter -t "Hello, World!" -v "your_voice_id" 
 ```
