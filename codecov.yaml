@@ -17,4 +17,4 @@ coverage:
     - title: Ignore mocks directory
       comment: This ignores the mock files in internal/client/mocks directory
       paths:
-        - "!internal/client/mocks/**"
+        - "!**/internal/client/mocks/**"
