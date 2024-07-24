@@ -14,11 +14,11 @@ import (
 	"unicode/utf8"
 )
 
-type ElevenRequest struct {
+type elevenRequest struct {
 	Text                            string                            `json:"text"`
 	ModelID                         string                            `json:"model_id"`
-	VoiceSettings                   VoiceSettings                     `json:"voice_settings"`
-	PronunciationDictionaryLocators []PronunciationDictionaryLocators `json:"pronunciation_dictionary_locators,omitempty"`
+	VoiceSettings                   voiceSettings                     `json:"voice_settings"`
+	PronunciationDictionaryLocators []pronunciationDictionaryLocators `json:"pronunciation_dictionary_locators,omitempty"`
 	Seed                            int                               `json:"seed,omitempty"`
 	PreviousText                    string                            `json:"previous_text,omitempty"`
 	NextText                        string                            `json:"next_text,omitempty"`
@@ -26,14 +26,14 @@ type ElevenRequest struct {
 	NextRequestIDs                  []string                          `json:"next_request_ids,omitempty"`
 }
 
-type VoiceSettings struct {
+type voiceSettings struct {
 	Stability       float64 `json:"stability"`
 	SimilarityBoost float64 `json:"similarity_boost"`
 	Style           int     `json:"style,omitempty"`
 	UseSpeakerBoost bool    `json:"use_speaker_boost,omitempty"`
 }
 
-type PronunciationDictionaryLocators struct {
+type pronunciationDictionaryLocators struct {
 	PronunciationDictionaryID string `json:"pronunciation_dictionary_id,omitempty"`
 	VersionID                 string `json:"version_id,omitempty"`
 }
@@ -128,10 +128,10 @@ func (c *ElevenLabs) FromText(text string, voiceID string) ([]byte, error) {
 }
 
 func buildPayload(text string) ([]byte, error) {
-	elvenReq := ElevenRequest{
+	elvenReq := elevenRequest{
 		Text:    text,
 		ModelID: "eleven_monolingual_v1",
-		VoiceSettings: VoiceSettings{
+		VoiceSettings: voiceSettings{
 			Stability:       0,
 			SimilarityBoost: 0,
 		},
