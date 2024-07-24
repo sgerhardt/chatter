@@ -1,68 +1,41 @@
 package main
 
 import (
-	"flag"
-	"github.com/joho/godotenv"
 	"github.com/sgerhardt/chatter/internal/client"
-	"github.com/sgerhardt/chatter/internal/config"
+	"github.com/sgerhardt/chatter/internal/setup"
+	"github.com/spf13/cobra"
 	"log"
-	"net"
-	"net/http"
-	"os"
-	"time"
 )
 
 func main() {
 	run()
 }
 
-func readEnvFile() (string, string) {
-	err := godotenv.Load()
-	if err != nil {
-		log.Fatalf("Error loading .env file: %v", err)
-	}
-	return os.Getenv("XI_API_KEY"), os.Getenv("OUTPUT")
-}
-
 func run() {
-	app, httpClient := setup()
-
-	client.New(app, httpClient).Run()
+	if err := rootCmd.Execute(); err != nil {
+		log.Fatal(err)
+	}
 }
 
-func setup() (config.AppConfig, client.HTTP) {
-	var app config.AppConfig
-	key, dir := readEnvFile()
-	if key == "" {
-		log.Fatal("API Key not found")
-	}
-	app.APIKey = key
-	app.OutputDir = dir
-	app.CharacterRequestLimit = 10000
+var rootCmd = &cobra.Command{
+	Use:   "app",
+	Short: "an eleven labs client for text to voice",
+	Run: func(_ *cobra.Command, _ []string) {
+		cfg, c, err := setup.New(".env", voiceID, textInput, siteInput)
+		if err != nil {
+			log.Fatal(err)
+		}
+		client.New(cfg, c).Run()
+	},
+}
+var (
+	voiceID   string
+	textInput string
+	siteInput string
+)
 
-	textInput := flag.String("t", "", "Text to convert to voice")
-	siteInput := flag.String("s", "", "Website to read text from")
-	voiceID := flag.String("v", "", "Voice ID to use")
-	flag.Parse()
-	if *voiceID == "" {
-		log.Fatal("Voice ID is required")
-	}
-	app.VoiceID = *voiceID
-
-	app.TextInput = *textInput
-	app.WebsiteURL = *siteInput
-	if app.TextInput != "" && app.WebsiteURL != "" {
-		log.Fatal("Only one of text or site can be provided")
-	}
-
-	httpClient := &http.Client{
-		Timeout: time.Second * 310,
-		Transport: &http.Transport{
-			DialContext:           (&net.Dialer{Timeout: time.Second * 3}).DialContext,
-			TLSHandshakeTimeout:   time.Second * 3,
-			ResponseHeaderTimeout: time.Second * 300, // eleven labs doesn't appear to respond with the header until the request completes
-		},
-	}
-
-	return app, httpClient
+func init() {
+	rootCmd.PersistentFlags().StringVarP(&textInput, "text", "t", "", "Text to convert to voice")
+	rootCmd.PersistentFlags().StringVarP(&siteInput, "site", "s", "", "Website to read text from")
+	rootCmd.PersistentFlags().StringVarP(&voiceID, "voice", "v", "", "Voice ID to use")
 }

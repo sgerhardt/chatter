@@ -40,7 +40,7 @@ type PronunciationDictionaryLocators struct {
 
 type ElevenLabs struct {
 	httpClient HTTP
-	Config     config.AppConfig
+	Config     *config.AppConfig
 }
 
 type HTTP interface {
@@ -59,7 +59,7 @@ func (c *ElevenLabs) fileWithTimestamp() string {
 	return prefix + formattedTime + ".mp3"
 }
 
-func (c *ElevenLabs) Write(data []byte) (int, error) {
+func (c *ElevenLabs) write(data []byte) (int, error) {
 	err := os.WriteFile(c.fileWithTimestamp(), data, 0644)
 	if err != nil {
 		return 0, err
@@ -68,7 +68,7 @@ func (c *ElevenLabs) Write(data []byte) (int, error) {
 	return len(data), nil
 }
 
-func New(cfg config.AppConfig, httpClient HTTP) *ElevenLabs {
+func New(cfg *config.AppConfig, httpClient HTTP) *ElevenLabs {
 	return &ElevenLabs{
 		Config:     cfg,
 		httpClient: httpClient,
@@ -77,26 +77,26 @@ func New(cfg config.AppConfig, httpClient HTTP) *ElevenLabs {
 
 func (c *ElevenLabs) Run() {
 	if c.Config.TextInput != "" {
-		c.fromText()
+		c.handleText()
 	}
 
 	if c.Config.WebsiteURL != "" {
-		c.fromSite()
+		c.handleSite()
 	}
 }
 
-func (c *ElevenLabs) fromText() {
+func (c *ElevenLabs) handleText() {
 	fromText, err := c.FromText(c.Config.TextInput, c.Config.VoiceID)
 	if err != nil {
 		log.Fatal(err)
 	}
-	_, err = c.Write(fromText)
+	_, err = c.write(fromText)
 	if err != nil {
 		log.Fatal(err)
 	}
 }
 
-func (c *ElevenLabs) fromSite() {
+func (c *ElevenLabs) handleSite() {
 	texts, err := c.FromWebsite(c.Config.WebsiteURL)
 	if err != nil {
 		log.Fatal(err)
@@ -106,7 +106,7 @@ func (c *ElevenLabs) fromSite() {
 		if tErr != nil {
 			log.Fatal(tErr)
 		}
-		_, err = c.Write(fromText)
+		_, err = c.write(fromText)
 		if err != nil {
 			log.Fatal(err)
 		}

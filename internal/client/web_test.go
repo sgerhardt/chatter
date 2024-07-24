@@ -50,7 +50,7 @@ func TestWebReader(t *testing.T) {
 			t.Parallel()
 			mockClient := mocks.NewHTTP(t)
 			tt.mockSetup(mockClient)
-			appConfig := config.AppConfig{
+			appConfig := &config.AppConfig{
 				CharacterRequestLimit: tt.charLimit,
 				APIKey:                "testkey",
 				VoiceID:               "testvoice",

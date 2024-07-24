@@ -75,7 +75,7 @@ func TestClient_GenerateVoiceFromText(t *testing.T) {
 			t.Parallel()
 			mockClient := mocks.NewHTTP(t)
 			tt.mockSetup(mockClient)
-			cfg := config.AppConfig{
+			cfg := &config.AppConfig{
 				CharacterRequestLimit: 100,
 				OutputDir:             tt.fields.outputFilePath,
 				APIKey:                tt.fields.apiKey,
