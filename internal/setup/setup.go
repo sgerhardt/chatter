@@ -15,55 +15,56 @@ import (
 	"time"
 )
 
-var (
-	voiceID   string
-	textInput string
-	siteInput string
-)
+func NewRootCmd() *cobra.Command {
 
-var RootCmd = &cobra.Command{
-	Use:   "chatter -v <voiceID> {-t <text> | -s <url>}",
-	Short: "An Eleven Labs client for text to voice",
-	Long: `Chatter is a command-line client for Eleven Labs text-to-voice service.
+	var voiceID string
+	var textInput string
+	var siteInput string
+
+	cmd := &cobra.Command{
+		Use:   "chatter -v <voiceID> {-t <text> | -s <url>}",
+		Short: "An Eleven Labs client for text to voice",
+		Long: `Chatter is a command-line client for Eleven Labs text-to-voice service.
 
 Usage:
   chatter -v <voiceID> -t <text>   (Provide text to convert to voice)
   chatter -v <voiceID> -s <url>    (Provide a URL to read text from)
 
 Either --text or --site is required, but not both.`,
-	PreRunE: func(cmd *cobra.Command, args []string) error {
-		if voiceID == "" {
-			return errors.New("voice is required")
-		}
-		if textInput == "" && siteInput == "" {
+		PreRunE: func(_ *cobra.Command, _ []string) error {
+			if voiceID == "" {
+				return errors.New("voice is required")
+			}
+			if textInput == "" && siteInput == "" {
+				return errors.New("text or site is required")
+			}
+			if textInput != "" && siteInput != "" {
+				return errors.New("only one of text or site can be provided")
+			}
+			return nil
+		},
+		RunE: func(_ *cobra.Command, _ []string) error {
+			cfg, c, err := New(".env", voiceID, textInput, siteInput)
+			if err != nil {
+				return err
+			}
+			if textInput != "" {
+				return client.New(cfg, c).ProcessText()
+			} else if siteInput != "" {
+				return client.New(cfg, c).ProcessSite()
+			}
 			return errors.New("text or site is required")
-		}
-		if textInput != "" && siteInput != "" {
-			return errors.New("only one of text or site can be provided")
-		}
-		return nil
-	},
-	RunE: func(cmd *cobra.Command, args []string) error {
-		cfg, c, err := New(".env", voiceID, textInput, siteInput)
-		if err != nil {
-			return err
-		}
-		if textInput != "" {
-			return client.New(cfg, c).ProcessText()
-		} else if siteInput != "" {
-			return client.New(cfg, c).ProcessSite()
-		}
-		return errors.New("text or site is required")
-	},
-}
+		},
+	}
 
-func init() {
-	RootCmd.Flags().StringVarP(&textInput, "text", "t", "", "Text to convert to voice")
-	RootCmd.Flags().StringVarP(&siteInput, "site", "s", "", "Website to read text from!!")
-	RootCmd.Flags().StringVarP(&voiceID, "voice", "v", "", "Voice ID to use")
-	if err := RootCmd.MarkFlagRequired("voice"); err != nil {
+	cmd.Flags().StringVarP(&textInput, "text", "t", "", "Text to convert to voice")
+	cmd.Flags().StringVarP(&siteInput, "site", "s", "", "Website to read text from")
+	cmd.Flags().StringVarP(&voiceID, "voice", "v", "", "Voice ID to use")
+	if err := cmd.MarkFlagRequired("voice"); err != nil {
 		log.Fatal(err)
 	}
+
+	return cmd
 }
 
 func readEnvFile(filename string) (string, string, error) {

@@ -8,8 +8,10 @@ import (
 	"testing"
 )
 
-func TestRootCmdErrors(t *testing.T) {
-	t.Parallel()
+func TestRootCmdErrors(t *testing.T) { // nolint:paralleltest
+	// Save the original command-line arguments and restore them after the test
+	originalArgs := os.Args
+
 	tests := []struct {
 		name     string
 		args     []string
@@ -32,17 +34,19 @@ func TestRootCmdErrors(t *testing.T) {
 		},
 	}
 
-	for _, tt := range tests {
-		// nolint:paralleltest
+	for _, tt := range tests { // nolint:paralleltest
 		t.Run(tt.name, func(t *testing.T) {
+			t.Cleanup(func() { os.Args = originalArgs })
+
 			// Set the command-line arguments for the test
-			os.Args = tt.args
+			os.Args = append([]string{"chatter"}, tt.args...)
 
 			// Execute the command
-			err := RootCmd.Execute()
+			err := NewRootCmd().Execute()
 
+			// Verify the error
 			assert.Error(t, err)
-			assert.ErrorContains(t, err, tt.errorMsg)
+			assert.Contains(t, err.Error(), tt.errorMsg)
 		})
 	}
 }

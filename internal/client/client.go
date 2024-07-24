@@ -95,7 +95,9 @@ func (c *ElevenLabs) ProcessSite() error {
 			return tErr
 		}
 		_, err = c.write(fromText)
-		return err
+		if err != nil {
+			return err
+		}
 	}
 	return nil
 }
