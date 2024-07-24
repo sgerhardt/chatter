@@ -8,6 +8,45 @@ import (
 	"testing"
 )
 
+func TestRootCmdErrors(t *testing.T) {
+	t.Parallel()
+	tests := []struct {
+		name     string
+		args     []string
+		errorMsg string
+	}{
+		{
+			name:     "missing voice flag",
+			args:     []string{"chatter", "--text", "Hello World"},
+			errorMsg: "voice is required",
+		},
+		{
+			name:     "both text and site provided",
+			args:     []string{"chatter", "--voice", "123", "--text", "Hello World", "--site", "https://example.com"},
+			errorMsg: "only one of text or site can be provided",
+		},
+		{
+			name:     "text flag set and .env not found",
+			args:     []string{"chatter", "--voice", "123", "--text", "Hello World"},
+			errorMsg: ".env: no such file or directory",
+		},
+	}
+
+	for _, tt := range tests {
+		// nolint:paralleltest
+		t.Run(tt.name, func(t *testing.T) {
+			// Set the command-line arguments for the test
+			os.Args = tt.args
+
+			// Execute the command
+			err := RootCmd.Execute()
+
+			assert.Error(t, err)
+			assert.ErrorContains(t, err, tt.errorMsg)
+		})
+	}
+}
+
 func TestNew(t *testing.T) {
 	// nolint:paralleltest
 	// This test deals with setting os-level env vars, which is not supported in parallel tests

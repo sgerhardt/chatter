@@ -75,43 +75,29 @@ func New(cfg *config.AppConfig, httpClient HTTP) *ElevenLabs {
 	}
 }
 
-func (c *ElevenLabs) Run() {
-	if c.Config.TextInput != "" {
-		c.handleText()
-	}
-
-	if c.Config.WebsiteURL != "" {
-		c.handleSite()
-	}
-}
-
-func (c *ElevenLabs) handleText() {
+func (c *ElevenLabs) ProcessText() error {
 	fromText, err := c.FromText(c.Config.TextInput, c.Config.VoiceID)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 	_, err = c.write(fromText)
-	if err != nil {
-		log.Fatal(err)
-	}
+	return err
 }
 
-func (c *ElevenLabs) handleSite() {
+func (c *ElevenLabs) ProcessSite() error {
 	texts, err := c.FromWebsite(c.Config.WebsiteURL)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 	for _, text := range texts {
 		fromText, tErr := c.FromText(text, c.Config.VoiceID)
 		if tErr != nil {
-			log.Fatal(tErr)
+			return tErr
 		}
 		_, err = c.write(fromText)
-		if err != nil {
-			log.Fatal(err)
-		}
+		return err
 	}
-
+	return nil
 }
 
 func (c *ElevenLabs) FromText(text string, voiceID string) ([]byte, error) {

@@ -1,7 +1,7 @@
 Eleven Labs Client
 ==================
 [![Go Report Card](https://goreportcard.com/badge/github.com/sgerhardt/chatter)](https://goreportcard.com/report/github.com/sgerhardt/chatter)
-
+[![codecov](https://codecov.io/github/sgerhardt/chatter/graph/badge.svg?token=JFOAE30XNQ)](https://codecov.io/github/sgerhardt/chatter)
 
 1. Have an eleven labs account
 2. Setup a .env file with the following content

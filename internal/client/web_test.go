@@ -1,6 +1,7 @@
-package client
+package client_test
 
 import (
+	"github.com/sgerhardt/chatter/internal/client"
 	"github.com/sgerhardt/chatter/internal/client/mocks"
 	"github.com/sgerhardt/chatter/internal/config"
 	"github.com/stretchr/testify/assert"
@@ -56,7 +57,7 @@ func TestWebReader(t *testing.T) {
 				VoiceID:               "testvoice",
 				WebsiteURL:            "https://test.com",
 			}
-			c := New(appConfig, mockClient)
+			c := client.New(appConfig, mockClient)
 			texts, err := c.FromWebsite("https://test.com")
 			if tt.error != nil {
 				assert.EqualError(t, err, tt.error.Error())
